@@ -18,7 +18,7 @@
 		FA01ED1816873449005FF4B3 /* Default-568h@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = FA01ED1716873449005FF4B3 /* Default-568h@2x.png */; };
 		FA01ED1B16873449005FF4B3 /* MainStoryboard.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = FA01ED1916873449005FF4B3 /* MainStoryboard.storyboard */; };
 		FA01ED1E16873449005FF4B3 /* ABViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = FA01ED1D16873449005FF4B3 /* ABViewController.m */; };
-		FA01ED2616873657005FF4B3 /* ABHorizontalPicker.m in Sources */ = {isa = PBXBuildFile; fileRef = FA01ED2516873657005FF4B3 /* ABHorizontalPicker.m */; };
+		FA01ED2616873657005FF4B3 /* ABHorizontalPickerView.m in Sources */ = {isa = PBXBuildFile; fileRef = FA01ED2516873657005FF4B3 /* ABHorizontalPickerView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,8 +38,8 @@
 		FA01ED1A16873449005FF4B3 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = en; path = en.lproj/MainStoryboard.storyboard; sourceTree = "<group>"; };
 		FA01ED1C16873449005FF4B3 /* ABViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ABViewController.h; sourceTree = "<group>"; };
 		FA01ED1D16873449005FF4B3 /* ABViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ABViewController.m; sourceTree = "<group>"; };
-		FA01ED2416873656005FF4B3 /* ABHorizontalPicker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ABHorizontalPicker.h; sourceTree = "<group>"; };
-		FA01ED2516873657005FF4B3 /* ABHorizontalPicker.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ABHorizontalPicker.m; sourceTree = "<group>"; };
+		FA01ED2416873656005FF4B3 /* ABHorizontalPickerView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ABHorizontalPickerView.h; sourceTree = "<group>"; };
+		FA01ED2516873657005FF4B3 /* ABHorizontalPickerView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ABHorizontalPickerView.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,8 +91,8 @@
 				FA01ED1916873449005FF4B3 /* MainStoryboard.storyboard */,
 				FA01ED1C16873449005FF4B3 /* ABViewController.h */,
 				FA01ED1D16873449005FF4B3 /* ABViewController.m */,
-				FA01ED2416873656005FF4B3 /* ABHorizontalPicker.h */,
-				FA01ED2516873657005FF4B3 /* ABHorizontalPicker.m */,
+				FA01ED2416873656005FF4B3 /* ABHorizontalPickerView.h */,
+				FA01ED2516873657005FF4B3 /* ABHorizontalPickerView.m */,
 				FA01ED0816873449005FF4B3 /* Supporting Files */,
 			);
 			path = ABHorizontalPicker;
@@ -182,7 +182,7 @@
 				FA01ED0E16873449005FF4B3 /* main.m in Sources */,
 				FA01ED1216873449005FF4B3 /* ABAppDelegate.m in Sources */,
 				FA01ED1E16873449005FF4B3 /* ABViewController.m in Sources */,
-				FA01ED2616873657005FF4B3 /* ABHorizontalPicker.m in Sources */,
+				FA01ED2616873657005FF4B3 /* ABHorizontalPickerView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

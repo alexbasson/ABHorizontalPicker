@@ -6,9 +6,9 @@
 //  Copyright (c) 2012 Alex Basson. All rights reserved.
 //
 
-#import "ABHorizontalPicker.h"
+#import "ABHorizontalPickerView.h"
 
-@implementation ABHorizontalPicker
+@implementation ABHorizontalPickerView
 
 - (id)initWithFrame:(CGRect)frame
 {
