@@ -44,7 +44,7 @@
 
 
 #pragma mark - ABHorizontalPickerView @interface
-@interface ABHorizontalPickerView : UIView
+@interface ABHorizontalPickerView : UIView <UICollectionViewDataSource, UICollectionViewDelegate>
 
 @property (nonatomic, assign) id<ABHorizontalPickerViewDataSource> dataSource;
 @property (nonatomic, assign) id<ABHorizontalPickerViewDelegate> delegate;
