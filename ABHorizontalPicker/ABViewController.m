@@ -81,5 +81,19 @@ typedef enum {
     return title;
 }
 
+- (void)pickerView:(ABHorizontalPickerView *)pickerView didSelectColumn:(NSInteger)column inComponent:(NSInteger)component
+{
+    switch (component) {
+        case NUMBERS_COMPONENT:
+            [[self numbersLabel] setText:[(NSNumber *)_numbers[column] stringValue]];
+            break;
+        case LETTERS_COMPONENT:
+            [[self lettersLabel] setText:_letters[column]];
+            break;
+        default:
+            break;
+    }
+}
+
 
 @end

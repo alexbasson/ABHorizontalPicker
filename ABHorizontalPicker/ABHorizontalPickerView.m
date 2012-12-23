@@ -46,17 +46,29 @@
     for (NSInteger i = 0; i < [self numberOfComponents]; i++) {
         ycoord += 1.f;
         CGFloat height = 0.f;
-        if (_delegate && [_delegate respondsToSelector:@selector(pickerView:heightForComponent:)]) {
-            height = [_delegate pickerView:self heightForComponent:i];
+        CGFloat columnWidth = 0.f;
+        if (_delegate) {
+            if ([_delegate respondsToSelector:@selector(pickerView:heightForComponent:)]) {
+                height = [_delegate pickerView:self heightForComponent:i];
+            } else {
+                NSLog(@"Error: Delegate must implement pickerView:heightForComponent:");
+            }
+            if ([_delegate respondsToSelector:@selector(pickerView:columnWidthForComponent:)]) {
+                columnWidth = [_delegate pickerView:self columnWidthForComponent:i];
+            } else {
+                NSLog(@"Error: Delegate must implement pickerView:columnWidthForComponent:");
+            }
         }
         CGRect frame = CGRectMake([self bounds].origin.x, ycoord, [self bounds].size.width, height);
         UICollectionViewFlowLayout *flowLayout = [[UICollectionViewFlowLayout alloc] init];
         [flowLayout setMinimumInteritemSpacing:0.f];
         [flowLayout setMinimumLineSpacing:0.f];
         [flowLayout setScrollDirection:UICollectionViewScrollDirectionHorizontal];
+        [flowLayout setItemSize:CGSizeMake(columnWidth, height)];
         UICollectionView *component = [[UICollectionView alloc] initWithFrame:frame collectionViewLayout:flowLayout];
         [component setDataSource:self];
         [component setDelegate:self];
+        [component registerClass:[UICollectionViewCell class] forCellWithReuseIdentifier:@"ABHoriontalPickerViewCell"];
         [component setShowsHorizontalScrollIndicator:NO];
         [component setShowsVerticalScrollIndicator:NO];
         [_components addObject:component];
@@ -190,7 +202,32 @@
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
 {
+    NSInteger component = [_components indexOfObject:collectionView];
     UICollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"ABHorizontalPickerViewCell" forIndexPath:indexPath];
+    
+    if ([self columnForItem:[indexPath row]] < 0 || [self columnForItem:[indexPath row]] > [_dataSource pickerView:self numberOfColumnsInComponent:component]) {
+        return cell;
+    }
+
+    if (_delegate) {
+        if ([_delegate respondsToSelector:@selector(pickerView:viewForColumn:forComponent:reusingView:)]) {
+            UIView *view = [[cell contentView] subviews][0];
+            if (!view) {
+                view = [_delegate pickerView:self viewForColumn:[self columnForItem:[indexPath row]] forComponent:component reusingView:view];
+            }
+            [[cell contentView] addSubview:view];
+        } else {
+            UILabel *contentLabel = [[UILabel alloc] initWithFrame:[[cell contentView] bounds]];
+            if ([_delegate respondsToSelector:@selector(pickerView:attributedTitleForColumn:forComponent:)]) {
+                [contentLabel setAttributedText:[_delegate pickerView:self attributedTitleForColumn:[self columnForItem:[indexPath row]] forComponent:component]];
+            } else if ([_delegate respondsToSelector:@selector(pickerView:titleForColumn:forComponent:)]) {
+                [contentLabel setText:[_delegate pickerView:self titleForColumn:[self columnForItem:[indexPath row]] forComponent:component]];
+            } else {
+                NSLog(@"Error: Delegate must implement either pickerView:viewForColumn:forComponent:reusingView: or pickerView:titleForColumn:forComponent:");
+            }
+            [[cell contentView] addSubview:contentLabel];
+        }
+    }
     return cell;
 }
 
