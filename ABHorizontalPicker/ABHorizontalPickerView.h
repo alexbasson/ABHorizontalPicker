@@ -26,8 +26,8 @@
 
 @required
 // Setting the Dimensions of the ABHorizontalPicker View
-- (CGFloat)pickerView:(ABHorizontalPickerView *)pickerView columnWidthForComponent:(NSInteger)component;
 - (CGFloat)pickerView:(ABHorizontalPickerView *)pickerView heightForComponent:(NSInteger)component;
+- (CGFloat)pickerView:(ABHorizontalPickerView *)pickerView columnWidthForComponent:(NSInteger)component;
 
 @optional
 // Setting the Content of Component Columns
@@ -46,8 +46,8 @@
 #pragma mark - ABHorizontalPickerView @interface
 @interface ABHorizontalPickerView : UIView <UICollectionViewDataSource, UICollectionViewDelegate>
 
-@property (nonatomic, assign) id<ABHorizontalPickerViewDataSource> dataSource;
-@property (nonatomic, assign) id<ABHorizontalPickerViewDelegate> delegate;
+@property (nonatomic, assign) IBOutlet id<ABHorizontalPickerViewDataSource> dataSource;
+@property (nonatomic, assign) IBOutlet id<ABHorizontalPickerViewDelegate> delegate;
 @property (nonatomic, readonly) NSInteger numberOfComponents;
 @property (nonatomic) BOOL showsSelectionIndicator;
 

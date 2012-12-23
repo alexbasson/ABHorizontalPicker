@@ -10,7 +10,7 @@
 
 @interface ABHorizontalPickerView () {
     NSMutableArray *_components;
-    NSInteger _numberOfBufferCells;
+    NSMutableArray *_numberOfBufferCells;
 }
 @end
 
@@ -163,7 +163,7 @@
     if (section == 0) {
         NSInteger component = [_components indexOfObject:collectionView];
         if (_dataSource && [_dataSource respondsToSelector:@selector(pickerView:numberOfColumnsInComponent:)]) {
-            numberOfItems = [_dataSource pickerView:self numberOfColumnsInComponent:component];
+            numberOfItems = [_dataSource pickerView:self numberOfColumnsInComponent:component] + 2*[(NSNumber *)_numberOfBufferCells[component] integerValue];
         }
     }
     return numberOfItems;
