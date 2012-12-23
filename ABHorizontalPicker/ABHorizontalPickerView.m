@@ -25,15 +25,31 @@
 {
     self = [super initWithFrame:frame];
     if (self) {
-        // Initialization code
+        [self setup];
+    }
+    return self;
+}
+
+- (id)initWithCoder:(NSCoder *)aDecoder
+{
+    self = [super initWithCoder:aDecoder];
+    if (self) {
+        [self setup];
     }
     return self;
 }
 
 - (void)setup
 {
+    [self setBackgroundColor:[UIColor blackColor]];
+    CGFloat ycoord = 0.f;
     for (NSInteger i = 0; i < [self numberOfComponents]; i++) {
-        CGRect frame;
+        ycoord += 1.f;
+        CGFloat height = 0.f;
+        if (_delegate && [_delegate respondsToSelector:@selector(pickerView:heightForComponent:)]) {
+            height = [_delegate pickerView:self heightForComponent:i];
+        }
+        CGRect frame = CGRectMake([self bounds].origin.x, ycoord, [self bounds].size.width, height);
         UICollectionViewFlowLayout *flowLayout = [[UICollectionViewFlowLayout alloc] init];
         [flowLayout setMinimumInteritemSpacing:0.f];
         [flowLayout setMinimumLineSpacing:0.f];
@@ -41,7 +57,10 @@
         UICollectionView *component = [[UICollectionView alloc] initWithFrame:frame collectionViewLayout:flowLayout];
         [component setDataSource:self];
         [component setDelegate:self];
+        [component setShowsHorizontalScrollIndicator:NO];
+        [component setShowsVerticalScrollIndicator:NO];
         [_components addObject:component];
+        [self addSubview:component];
     }
 }
 
