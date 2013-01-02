@@ -11,6 +11,10 @@
 
 #pragma mark - ABHorizontalPickerViewDataSource protocol
 @protocol ABHorizontalPickerViewDataSource <NSObject>
+@optional
+// Setting and showing the selection indicator
+- (BOOL)shouldShowSelectionIndicatorForPickerView:(ABHorizontalPickerView *)pickerView;
+- (UIColor *)colorForSelectionIndicatorForPickerView:(ABHorizontalPickerView *)pickerView;
 
 @required
 // Providing Counts for the ABHorizontalPicker View

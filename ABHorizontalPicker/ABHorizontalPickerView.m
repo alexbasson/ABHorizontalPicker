@@ -30,6 +30,7 @@
 @interface ABHorizontalPickerView () {
     CGFloat _columnWidth;
     CGFloat _componentHeight;
+    UIColor *_selectionIndicatorColor;
     NSMutableArray *_components;
     NSMutableArray *_numberOfBufferCellsForComponent;
     NSMutableArray *_cellIdentifiers;
@@ -70,7 +71,13 @@
     if (_dataSource && [_dataSource respondsToSelector:@selector(numberOfComponentsInPickerView:)]) {
         _numberOfComponents = [_dataSource numberOfComponentsInPickerView:self];
     }
-
+    
+    if (_dataSource && [_dataSource respondsToSelector:@selector(shouldShowSelectionIndicatorForPickerView:)]) {
+        _showsSelectionIndicator = [_dataSource shouldShowSelectionIndicatorForPickerView:self];
+    } else {
+        _showsSelectionIndicator = YES;
+    }
+    
     _components = [NSMutableArray arrayWithCapacity:_numberOfComponents];
     _cellIdentifiers = [NSMutableArray arrayWithCapacity:_numberOfComponents];
     _numberOfBufferCellsForComponent = [NSMutableArray arrayWithCapacity:_numberOfComponents];
@@ -113,11 +120,16 @@
         
         if (_showsSelectionIndicator) {
             UIView *selectionIndicator = [[UIView alloc] initWithFrame:CGRectMake([self center].x - columnWidth/2.f, ycoord, columnWidth, componentHeight)];
-            [selectionIndicator setBackgroundColor:[UIColor blueColor]];
+            if (_dataSource && [_dataSource respondsToSelector:@selector(colorForSelectionIndicatorForPickerView:)]) {
+                _selectionIndicatorColor = [_dataSource colorForSelectionIndicatorForPickerView:self];
+            } else {
+                _selectionIndicatorColor = [UIColor blueColor];
+            }
+            [selectionIndicator setBackgroundColor:_selectionIndicatorColor];
             [selectionIndicator setAlpha:0.2f];
             [selectionIndicator setUserInteractionEnabled:NO];
             [selectionIndicator layer].borderWidth = 1.f;
-            [selectionIndicator layer].borderColor = [UIColor darkGrayColor].CGColor;
+            [selectionIndicator layer].borderColor = _selectionIndicatorColor.CGColor;
             [self addSubview:selectionIndicator];
         }
         
