@@ -6,11 +6,34 @@
 //  Copyright (c) 2012 Alex Basson. All rights reserved.
 //
 
+#import <QuartzCore/QuartzCore.h>
 #import "ABHorizontalPickerView.h"
 
+#pragma mark - UICollectionView category
+//================================
+// UICollectionView category
+//================================
+@implementation UICollectionView (ABCollectionView)
+- (NSIndexPath *)indexPathForItemInCenter
+{
+    CGFloat centerX = [self contentOffset].x + [self center].x;
+    CGFloat centerY = [self bounds].origin.y + [self bounds].size.height/2.f;
+    return [self indexPathForItemAtPoint:CGPointMake(centerX, centerY)];
+}
+@end
+
+
+#pragma mark - ABHorizontalPicker implementation
+//================================
+// ABHorizontalPicker
+//================================
 @interface ABHorizontalPickerView () {
+    CGFloat _columnWidth;
+    CGFloat _componentHeight;
     NSMutableArray *_components;
-    NSMutableArray *_numberOfBufferCells;
+    NSMutableArray *_numberOfBufferCellsForComponent;
+    NSMutableArray *_cellIdentifiers;
+    BOOL _scrolling;
 }
 @end
 
@@ -25,7 +48,6 @@
 {
     self = [super initWithFrame:frame];
     if (self) {
-        [self setup];
     }
     return self;
 }
@@ -34,58 +56,96 @@
 {
     self = [super initWithCoder:aDecoder];
     if (self) {
-        [self setup];
     }
     return self;
+}
+
+- (void)awakeFromNib
+{
+    [self setup];
 }
 
 - (void)setup
 {
     [self setBackgroundColor:[UIColor blackColor]];
+    _components = [NSMutableArray arrayWithCapacity:[self numberOfComponents]];
+    _numberOfBufferCellsForComponent = [NSMutableArray arrayWithCapacity:[self numberOfComponents]];
+    _cellIdentifiers = [NSMutableArray arrayWithCapacity:[self numberOfComponents]];
+    _scrolling = NO;
+    
     CGFloat ycoord = 0.f;
     for (NSInteger i = 0; i < [self numberOfComponents]; i++) {
-        ycoord += 1.f;
-        CGFloat height = 0.f;
+        ycoord += 2.f;
+        CGFloat componentHeight = 0.f;
         CGFloat columnWidth = 0.f;
         if (_delegate) {
             if ([_delegate respondsToSelector:@selector(pickerView:heightForComponent:)]) {
-                height = [_delegate pickerView:self heightForComponent:i];
+                componentHeight = [_delegate pickerView:self heightForComponent:i];
+                ycoord += componentHeight;
             } else {
                 NSLog(@"Error: Delegate must implement pickerView:heightForComponent:");
             }
             if ([_delegate respondsToSelector:@selector(pickerView:columnWidthForComponent:)]) {
                 columnWidth = [_delegate pickerView:self columnWidthForComponent:i];
+                _numberOfBufferCellsForComponent[i] = @(floorf(([self bounds].size.width/2.f)/columnWidth) + 1.f);
             } else {
                 NSLog(@"Error: Delegate must implement pickerView:columnWidthForComponent:");
             }
         }
-        CGRect frame = CGRectMake([self bounds].origin.x, ycoord, [self bounds].size.width, height);
+        
         UICollectionViewFlowLayout *flowLayout = [[UICollectionViewFlowLayout alloc] init];
         [flowLayout setMinimumInteritemSpacing:0.f];
         [flowLayout setMinimumLineSpacing:0.f];
         [flowLayout setScrollDirection:UICollectionViewScrollDirectionHorizontal];
-        [flowLayout setItemSize:CGSizeMake(columnWidth, height)];
-        UICollectionView *component = [[UICollectionView alloc] initWithFrame:frame collectionViewLayout:flowLayout];
+        [flowLayout setItemSize:CGSizeMake(columnWidth, componentHeight)];
+
+        CGRect componentFrame = CGRectMake([self bounds].origin.x, ycoord, [self bounds].size.width, componentHeight);
+        UICollectionView *component = [[UICollectionView alloc] initWithFrame:componentFrame collectionViewLayout:flowLayout];
+        NSString *cellIdentifier = [@"PickerCellForComponent" stringByAppendingFormat:@"%i", i];
         [component setDataSource:self];
         [component setDelegate:self];
-        [component registerClass:[UICollectionViewCell class] forCellWithReuseIdentifier:@"ABHoriontalPickerViewCell"];
+        [component registerClass:[UICollectionViewCell class] forCellWithReuseIdentifier:cellIdentifier];
         [component setShowsHorizontalScrollIndicator:NO];
         [component setShowsVerticalScrollIndicator:NO];
-        [_components addObject:component];
+        [component setBounces:NO];
         [self addSubview:component];
+        
+        if (_showsSelectionIndicator) {
+            UIView *selectionIndicator = [[UIView alloc] initWithFrame:CGRectMake([self center].x - columnWidth/2.f, ycoord, columnWidth, componentHeight)];
+            [selectionIndicator setBackgroundColor:[UIColor blueColor]];
+            [selectionIndicator setAlpha:0.2f];
+            [selectionIndicator setUserInteractionEnabled:NO];
+            [selectionIndicator layer].borderWidth = 1.f;
+            [selectionIndicator layer].borderColor = [UIColor darkGrayColor].CGColor;
+            [self addSubview:selectionIndicator];
+        }
+        
+        [_components addObject:component];
+        [_cellIdentifiers addObject:cellIdentifier];
+        ycoord += componentHeight + 2.f;
     }
+    CGRect pickerFrame = [self frame];
+    pickerFrame.size.height = ycoord + 2.f;
+    [self setFrame:pickerFrame];
 }
 
 #pragma mark - Column <-> Item conversions
 
-- (NSInteger)itemForColumn:(NSInteger)column
+- (NSInteger)itemForColumn:(NSInteger)column forComponent:(NSInteger)component
 {
-    return column;
+    return column + [(NSNumber *)_numberOfBufferCellsForComponent[component] integerValue];
 }
 
-- (NSInteger)columnForItem:(NSInteger)item
+- (NSInteger)columnForItem:(NSInteger)item forComponent:(NSInteger)component
 {
-    return item;
+    NSInteger bufferCells = [(NSNumber *)_numberOfBufferCellsForComponent[component] integerValue];
+    NSInteger numberOfItems = [self collectionView:_components[component] numberOfItemsInSection:0];
+    if (item < bufferCells) {
+        item = bufferCells;
+    } else if (item > numberOfItems - bufferCells - 1) {
+        item = numberOfItems - bufferCells - 1;
+    }
+    return item - bufferCells;
 }
 
 #pragma mark - property accessors
@@ -158,21 +218,25 @@
 
 - (NSInteger)selectedColumnInComponent:(NSInteger)component
 {
-    NSInteger selectedColumn = 0;
-    return selectedColumn;
+    UICollectionView *componentView = (UICollectionView *)_components[component];
+    NSInteger selectedItem = [[componentView indexPathsForSelectedItems][0] row];
+    return [self columnForItem:selectedItem forComponent:component];
 }
 
 - (void)selectColumn:(NSInteger)column inComponent:(NSInteger)component animated:(BOOL)animated
 {
-    NSIndexPath *indexPath = [NSIndexPath indexPathForItem:[self itemForColumn:column] inSection:0];
-    [(UICollectionView *)_components[component] selectItemAtIndexPath:indexPath animated:animated scrollPosition:UICollectionViewScrollPositionCenteredHorizontally];
+    NSIndexPath *indexPath = [NSIndexPath indexPathForItem:[self itemForColumn:column forComponent:component] inSection:0];
+    [(UICollectionView *)_components[component] scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:animated];
+    if (_delegate && [_delegate respondsToSelector:@selector(pickerView:didSelectColumn:inComponent:)]) {
+        [_delegate pickerView:self didSelectColumn:column inComponent:component];
+    }
 }
 
 #pragma mark - Returning the View for a Column and Component
 
 - (UIView *)viewForColumn:(NSInteger)column forComponent:(NSInteger)component
 {
-    NSIndexPath *indexPath = [NSIndexPath indexPathForItem:[self itemForColumn:column] inSection:0];
+    NSIndexPath *indexPath = [NSIndexPath indexPathForItem:[self itemForColumn:column forComponent:component] inSection:0];
     UICollectionViewCell *cell = [(UICollectionView *)_components[component] cellForItemAtIndexPath:indexPath];
     UIView *view = [cell contentView];
     if (!view && _delegate && [_delegate respondsToSelector:@selector(pickerView:viewForColumn:forComponent:reusingView:)]) {
@@ -194,7 +258,7 @@
     if (section == 0) {
         NSInteger component = [_components indexOfObject:collectionView];
         if (_dataSource && [_dataSource respondsToSelector:@selector(pickerView:numberOfColumnsInComponent:)]) {
-            numberOfItems = [_dataSource pickerView:self numberOfColumnsInComponent:component] + 2*[(NSNumber *)_numberOfBufferCells[component] integerValue];
+            numberOfItems = [_dataSource pickerView:self numberOfColumnsInComponent:component] + 2*[(NSNumber *)_numberOfBufferCellsForComponent[component] integerValue];
         }
     }
     return numberOfItems;
@@ -202,38 +266,92 @@
 
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath
 {
+    NSString *CellIdentifier = _cellIdentifiers[[_components indexOfObject:collectionView]];
     NSInteger component = [_components indexOfObject:collectionView];
-    UICollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"ABHorizontalPickerViewCell" forIndexPath:indexPath];
-    
-    if ([self columnForItem:[indexPath row]] < 0 || [self columnForItem:[indexPath row]] > [_dataSource pickerView:self numberOfColumnsInComponent:component]) {
-        return cell;
-    }
-
-    if (_delegate) {
-        if ([_delegate respondsToSelector:@selector(pickerView:viewForColumn:forComponent:reusingView:)]) {
-            UIView *view = [[cell contentView] subviews][0];
-            if (!view) {
-                view = [_delegate pickerView:self viewForColumn:[self columnForItem:[indexPath row]] forComponent:component reusingView:view];
-            }
-            [[cell contentView] addSubview:view];
-        } else {
-            UILabel *contentLabel = [[UILabel alloc] initWithFrame:[[cell contentView] bounds]];
-            if ([_delegate respondsToSelector:@selector(pickerView:attributedTitleForColumn:forComponent:)]) {
-                [contentLabel setAttributedText:[_delegate pickerView:self attributedTitleForColumn:[self columnForItem:[indexPath row]] forComponent:component]];
-            } else if ([_delegate respondsToSelector:@selector(pickerView:titleForColumn:forComponent:)]) {
-                [contentLabel setText:[_delegate pickerView:self titleForColumn:[self columnForItem:[indexPath row]] forComponent:component]];
+    UICollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:CellIdentifier forIndexPath:indexPath];
+    NSInteger bufferCellsForComponent = [(NSNumber *)_numberOfBufferCellsForComponent[component] integerValue];
+    NSInteger numberOfItems = [self collectionView:collectionView numberOfItemsInSection:[indexPath section]];
+    if ([indexPath row] >= bufferCellsForComponent && [indexPath row] < numberOfItems - bufferCellsForComponent) {
+        if (_delegate) {
+            if ([_delegate respondsToSelector:@selector(pickerView:viewForColumn:forComponent:reusingView:)]) {
+                for (UIView *subview in [[cell contentView] subviews]) {
+                    [subview removeFromSuperview];
+                }
+                [[cell contentView] addSubview:[_delegate pickerView:self
+                                                       viewForColumn:[indexPath row] - bufferCellsForComponent
+                                                        forComponent:component
+                                                         reusingView:[cell contentView]]];
             } else {
-                NSLog(@"Error: Delegate must implement either pickerView:viewForColumn:forComponent:reusingView: or pickerView:titleForColumn:forComponent:");
+                for (UIView *subview in [[cell contentView] subviews]) {
+                    [subview removeFromSuperview];
+                }
+                UILabel *titleLabel = [[UILabel alloc] initWithFrame:[[cell contentView] bounds]];
+                [titleLabel setTextAlignment:NSTextAlignmentCenter];
+                NSInteger column = [indexPath row] - bufferCellsForComponent;
+                if ([_delegate respondsToSelector:@selector(pickerView:attributedTitleForColumn:forComponent:)]) {
+                    [titleLabel setAttributedText:[_delegate pickerView:self attributedTitleForColumn:column forComponent:component]];
+                } else if ([_delegate respondsToSelector:@selector(pickerView:titleForColumn:forComponent:)]) {
+                    [titleLabel setText:[_delegate pickerView:self titleForColumn:column forComponent:component]];
+                } else {
+                    NSLog(@"Error: Delegate must implement either pickerView:viewForColumn:forComponent:reusingView: or pickerView:titleForColumn:forComponent:");
+                }
+                [[cell contentView] addSubview:titleLabel];
             }
-            [[cell contentView] addSubview:contentLabel];
         }
+    } else {
+        for (UIView *subView in [[cell contentView] subviews]) {
+            [subView removeFromSuperview];
+        }
+        [[cell contentView] setBackgroundColor:[UIColor whiteColor]];
     }
     return cell;
 }
 
 #pragma mark - UICollectionViewDelegate methods
 
+- (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath
+{
+    NSInteger component = [_components indexOfObject:collectionView];
+    NSInteger column = [self itemForColumn:[indexPath row] forComponent:component];
+    [self selectColumn:column inComponent:component animated:YES];
+}
 
+#pragma mark - UIScrollViewDelegate methods
+
+- (void)snapToGrid:(UIScrollView *)scrollView
+{
+    [self collectionView:(UICollectionView *)scrollView didSelectItemAtIndexPath:[(UICollectionView *)scrollView indexPathForItemInCenter]];
+    _scrolling = NO;
+}
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView
+{
+    NSInteger component = [_components indexOfObject:scrollView];
+    NSInteger column = [self columnForItem:[[(UICollectionView *)scrollView indexPathForItemInCenter] row] forComponent:component];
+    [_delegate pickerView:self didSelectColumn:column inComponent:component];
+}
+
+- (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
+{
+    [self snapToGrid:scrollView];
+}
+
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate
+{
+    if (!decelerate) {
+        [self snapToGrid:scrollView];
+    }
+}
+
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView
+{
+    _scrolling = YES;
+}
+
+- (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView
+{
+    _scrolling = NO;
+}
 
 
 /*

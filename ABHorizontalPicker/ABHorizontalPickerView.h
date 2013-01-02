@@ -46,8 +46,8 @@
 #pragma mark - ABHorizontalPickerView @interface
 @interface ABHorizontalPickerView : UIView <UICollectionViewDataSource, UICollectionViewDelegate>
 
-@property (nonatomic, assign) IBOutlet id<ABHorizontalPickerViewDataSource> dataSource;
-@property (nonatomic, assign) IBOutlet id<ABHorizontalPickerViewDelegate> delegate;
+@property (nonatomic, weak) IBOutlet id<ABHorizontalPickerViewDataSource> dataSource;
+@property (nonatomic, weak) IBOutlet id<ABHorizontalPickerViewDelegate> delegate;
 @property (nonatomic, readonly) NSInteger numberOfComponents;
 @property (nonatomic) BOOL showsSelectionIndicator;
 

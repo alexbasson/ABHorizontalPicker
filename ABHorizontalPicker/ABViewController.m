@@ -43,7 +43,7 @@ typedef enum {
 
 - (NSInteger)numberOfComponentsInPickerView:(ABHorizontalPickerView *)pickerView
 {
-    return [_components count];
+    return 2;//[_components count];
 }
 
 - (NSInteger)pickerView:(ABHorizontalPickerView *)pickerView numberOfColumnsInComponent:(NSInteger)component

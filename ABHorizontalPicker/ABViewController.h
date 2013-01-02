@@ -10,7 +10,9 @@
 #import "ABHorizontalPickerView.h"
 
 @interface ABViewController : UIViewController <ABHorizontalPickerViewDataSource, ABHorizontalPickerViewDelegate>
+
 @property (nonatomic, weak) IBOutlet ABHorizontalPickerView *pickerView;
 @property (nonatomic, weak) IBOutlet UILabel *numbersLabel;
 @property (nonatomic, weak) IBOutlet UILabel *lettersLabel;
+
 @end
