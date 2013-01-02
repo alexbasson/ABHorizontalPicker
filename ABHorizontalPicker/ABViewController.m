@@ -31,6 +31,10 @@ typedef enum {
     _letters = @[@"A", @"B", @"C", @"D", @"E", @"F", @"G", @"H", @"I", @"J", @"K", @"L", @"M", @"N", @"O", @"P", @"Q", @"R", @"S", @"T", @"U", @"V", @"W", @"X", @"Y", @"Z"];
     
     _components = @[_numbers, _letters];
+    
+    for (NSInteger component = 0; component < [_components count]; component++) {
+        [[self pickerView] selectColumn:0 inComponent:component animated:YES];
+    }
 }
 
 - (void)didReceiveMemoryWarning
