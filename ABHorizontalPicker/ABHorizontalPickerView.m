@@ -67,21 +67,23 @@
 
 - (void)setup
 {
-    [self setBackgroundColor:[UIColor blackColor]];
-    _components = [NSMutableArray arrayWithCapacity:[self numberOfComponents]];
-    _numberOfBufferCellsForComponent = [NSMutableArray arrayWithCapacity:[self numberOfComponents]];
-    _cellIdentifiers = [NSMutableArray arrayWithCapacity:[self numberOfComponents]];
+    if (_dataSource && [_dataSource respondsToSelector:@selector(numberOfComponentsInPickerView:)]) {
+        _numberOfComponents = [_dataSource numberOfComponentsInPickerView:self];
+    }
+
+    _components = [NSMutableArray arrayWithCapacity:_numberOfComponents];
+    _cellIdentifiers = [NSMutableArray arrayWithCapacity:_numberOfComponents];
+    _numberOfBufferCellsForComponent = [NSMutableArray arrayWithCapacity:_numberOfComponents];
     _scrolling = NO;
     
     CGFloat ycoord = 0.f;
-    for (NSInteger i = 0; i < [self numberOfComponents]; i++) {
+    for (NSInteger i = 0; i < _numberOfComponents; i++) {
         ycoord += 2.f;
         CGFloat componentHeight = 0.f;
         CGFloat columnWidth = 0.f;
         if (_delegate) {
             if ([_delegate respondsToSelector:@selector(pickerView:heightForComponent:)]) {
                 componentHeight = [_delegate pickerView:self heightForComponent:i];
-                ycoord += componentHeight;
             } else {
                 NSLog(@"Error: Delegate must implement pickerView:heightForComponent:");
             }
@@ -94,19 +96,18 @@
         }
         
         UICollectionViewFlowLayout *flowLayout = [[UICollectionViewFlowLayout alloc] init];
-        [flowLayout setMinimumInteritemSpacing:0.f];
-        [flowLayout setMinimumLineSpacing:0.f];
         [flowLayout setScrollDirection:UICollectionViewScrollDirectionHorizontal];
         [flowLayout setItemSize:CGSizeMake(columnWidth, componentHeight)];
+        [flowLayout setMinimumInteritemSpacing:0.f];
+        [flowLayout setMinimumLineSpacing:0.f];
 
         CGRect componentFrame = CGRectMake([self bounds].origin.x, ycoord, [self bounds].size.width, componentHeight);
         UICollectionView *component = [[UICollectionView alloc] initWithFrame:componentFrame collectionViewLayout:flowLayout];
         NSString *cellIdentifier = [@"PickerCellForComponent" stringByAppendingFormat:@"%i", i];
+        [component registerClass:[UICollectionViewCell class] forCellWithReuseIdentifier:cellIdentifier];
         [component setDataSource:self];
         [component setDelegate:self];
-        [component registerClass:[UICollectionViewCell class] forCellWithReuseIdentifier:cellIdentifier];
         [component setShowsHorizontalScrollIndicator:NO];
-        [component setShowsVerticalScrollIndicator:NO];
         [component setBounces:NO];
         [self addSubview:component];
         
@@ -122,11 +123,12 @@
         
         [_components addObject:component];
         [_cellIdentifiers addObject:cellIdentifier];
-        ycoord += componentHeight + 2.f;
+        ycoord += componentHeight;
     }
     CGRect pickerFrame = [self frame];
     pickerFrame.size.height = ycoord + 2.f;
     [self setFrame:pickerFrame];
+    [self setBackgroundColor:[UIColor blackColor]];
 }
 
 #pragma mark - Column <-> Item conversions
@@ -312,7 +314,7 @@
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath
 {
     NSInteger component = [_components indexOfObject:collectionView];
-    NSInteger column = [self itemForColumn:[indexPath row] forComponent:component];
+    NSInteger column = [self columnForItem:[indexPath row] forComponent:component];
     [self selectColumn:column inComponent:component animated:YES];
 }
 
