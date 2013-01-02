@@ -10,4 +10,4 @@ A horizontal picker has one huge advantage over the standard UIPickerView, and t
 
 ABHorizontalPickerView preserves vertical screen real estate.  The developer has complete control over the vertical size of each component and can tailor that size to fit the UI needs for each picker individually.  A picker with two components, each of which is 44 points high, takes up only 94 points of vertical space; this is contrasted with a UIPickerView, which by default takes up 216 points of vertical space.
 
-On the other hand, ABHorizontalPickerView is best used when the data being picked is short. Numbers and letters work well, month or day names work poorly.
+On the other hand, ABHorizontalPickerView is best used when the data being picked is short. Numbers and letters work well; day or month names work poorly.
