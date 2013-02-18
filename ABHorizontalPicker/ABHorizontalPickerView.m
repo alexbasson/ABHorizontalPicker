@@ -16,8 +16,8 @@
 @implementation UICollectionView (ABCollectionView)
 - (NSIndexPath *)indexPathForItemInCenter
 {
-    CGFloat centerX = [self contentOffset].x + [self center].x;
-    CGFloat centerY = [self bounds].origin.y + [self bounds].size.height/2.f;
+    CGFloat centerX = self.contentOffset.x + self.center.x;
+    CGFloat centerY = self.bounds.origin.y + self.bounds.size.height/2.f;
     return [self indexPathForItemAtPoint:CGPointMake(centerX, centerY)];
 }
 @end
@@ -36,14 +36,10 @@
     NSMutableArray *_cellIdentifiers;
     BOOL _scrolling;
 }
+@property (nonatomic) NSInteger numberOfComponents;
 @end
 
 @implementation ABHorizontalPickerView
-
-@synthesize dataSource = _dataSource;
-@synthesize delegate = _delegate;
-@synthesize numberOfComponents = _numberOfComponents;
-@synthesize showsSelectionIndicator = _showsSelectionIndicator;
 
 - (id)initWithFrame:(CGRect)frame
 {
@@ -68,68 +64,68 @@
 
 - (void)setup
 {
-    if (_dataSource && [_dataSource respondsToSelector:@selector(numberOfComponentsInPickerView:)]) {
-        _numberOfComponents = [_dataSource numberOfComponentsInPickerView:self];
+    if (self.dataSource && [self.dataSource respondsToSelector:@selector(numberOfComponentsInPickerView:)]) {
+        self.numberOfComponents = [self.dataSource numberOfComponentsInPickerView:self];
     }
     
-    if (_dataSource && [_dataSource respondsToSelector:@selector(shouldShowSelectionIndicatorForPickerView:)]) {
-        _showsSelectionIndicator = [_dataSource shouldShowSelectionIndicatorForPickerView:self];
+    if (self.dataSource && [self.dataSource respondsToSelector:@selector(shouldShowSelectionIndicatorForPickerView:)]) {
+        self.showsSelectionIndicator = [self.dataSource shouldShowSelectionIndicatorForPickerView:self];
     } else {
-        _showsSelectionIndicator = YES;
+        self.showsSelectionIndicator = YES;
     }
     
-    _components = [NSMutableArray arrayWithCapacity:_numberOfComponents];
-    _cellIdentifiers = [NSMutableArray arrayWithCapacity:_numberOfComponents];
-    _numberOfBufferCellsForComponent = [NSMutableArray arrayWithCapacity:_numberOfComponents];
+    _components = [NSMutableArray arrayWithCapacity:self.numberOfComponents];
+    _cellIdentifiers = [NSMutableArray arrayWithCapacity:self.numberOfComponents];
+    _numberOfBufferCellsForComponent = [NSMutableArray arrayWithCapacity:self.numberOfComponents];
     _scrolling = NO;
     
     CGFloat ycoord = 0.f;
-    for (NSInteger i = 0; i < _numberOfComponents; i++) {
+    for (NSInteger i = 0; i < self.numberOfComponents; i++) {
         ycoord += 2.f;
         CGFloat componentHeight = 0.f;
         CGFloat columnWidth = 0.f;
-        if (_delegate) {
-            if ([_delegate respondsToSelector:@selector(pickerView:heightForComponent:)]) {
-                componentHeight = [_delegate pickerView:self heightForComponent:i];
+        if (self.delegate) {
+            if ([self.delegate respondsToSelector:@selector(pickerView:heightForComponent:)]) {
+                componentHeight = [self.delegate pickerView:self heightForComponent:i];
             } else {
                 NSLog(@"Error: Delegate must implement pickerView:heightForComponent:");
             }
-            if ([_delegate respondsToSelector:@selector(pickerView:columnWidthForComponent:)]) {
-                columnWidth = [_delegate pickerView:self columnWidthForComponent:i];
-                _numberOfBufferCellsForComponent[i] = @(floorf(([self bounds].size.width/2.f)/columnWidth) + 1.f);
+            if ([self.delegate respondsToSelector:@selector(pickerView:columnWidthForComponent:)]) {
+                columnWidth = [self.delegate pickerView:self columnWidthForComponent:i];
+                _numberOfBufferCellsForComponent[i] = @(floorf((self.bounds.size.width/2.f)/columnWidth) + 1.f);
             } else {
                 NSLog(@"Error: Delegate must implement pickerView:columnWidthForComponent:");
             }
         }
         
         UICollectionViewFlowLayout *flowLayout = [[UICollectionViewFlowLayout alloc] init];
-        [flowLayout setScrollDirection:UICollectionViewScrollDirectionHorizontal];
-        [flowLayout setItemSize:CGSizeMake(columnWidth, componentHeight)];
-        [flowLayout setMinimumInteritemSpacing:0.f];
-        [flowLayout setMinimumLineSpacing:0.f];
+        flowLayout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
+        flowLayout.itemSize = CGSizeMake(columnWidth, componentHeight);
+        flowLayout.minimumInteritemSpacing = 0.f;
+        flowLayout.minimumLineSpacing = 0.f;
 
-        CGRect componentFrame = CGRectMake([self bounds].origin.x, ycoord, [self bounds].size.width, componentHeight);
+        CGRect componentFrame = CGRectMake(self.bounds.origin.x, ycoord, self.bounds.size.width, componentHeight);
         UICollectionView *component = [[UICollectionView alloc] initWithFrame:componentFrame collectionViewLayout:flowLayout];
         NSString *cellIdentifier = [@"PickerCellForComponent" stringByAppendingFormat:@"%i", i];
         [component registerClass:[UICollectionViewCell class] forCellWithReuseIdentifier:cellIdentifier];
-        [component setDataSource:self];
-        [component setDelegate:self];
-        [component setShowsHorizontalScrollIndicator:NO];
-        [component setBounces:NO];
+        component.dataSource = self;
+        component.delegate = self;
+        component.showsHorizontalScrollIndicator = NO;
+        component.bounces = NO;
         [self addSubview:component];
         
-        if (_showsSelectionIndicator) {
-            UIView *selectionIndicator = [[UIView alloc] initWithFrame:CGRectMake([self center].x - columnWidth/2.f, ycoord, columnWidth, componentHeight)];
-            if (_dataSource && [_dataSource respondsToSelector:@selector(colorForSelectionIndicatorForPickerView:)]) {
-                _selectionIndicatorColor = [_dataSource colorForSelectionIndicatorForPickerView:self];
+        if (self.showsSelectionIndicator) {
+            UIView *selectionIndicator = [[UIView alloc] initWithFrame:CGRectMake(self.center.x - columnWidth/2.f, ycoord, columnWidth, componentHeight)];
+            if (self.dataSource && [self.dataSource respondsToSelector:@selector(colorForSelectionIndicatorForPickerView:)]) {
+                _selectionIndicatorColor = [self.dataSource colorForSelectionIndicatorForPickerView:self];
             } else {
                 _selectionIndicatorColor = [UIColor blueColor];
             }
-            [selectionIndicator setBackgroundColor:_selectionIndicatorColor];
-            [selectionIndicator setAlpha:0.2f];
-            [selectionIndicator setUserInteractionEnabled:NO];
-            [selectionIndicator layer].borderWidth = 1.f;
-            [selectionIndicator layer].borderColor = _selectionIndicatorColor.CGColor;
+            selectionIndicator.backgroundColor = _selectionIndicatorColor;
+            selectionIndicator.alpha = 0.2f;
+            selectionIndicator.userInteractionEnabled = NO;
+            selectionIndicator.layer.borderWidth = 1.f;
+            selectionIndicator.layer.borderColor = _selectionIndicatorColor.CGColor;
             [self addSubview:selectionIndicator];
         }
         
@@ -137,10 +133,10 @@
         [_cellIdentifiers addObject:cellIdentifier];
         ycoord += componentHeight;
     }
-    CGRect pickerFrame = [self frame];
+    CGRect pickerFrame = self.frame;
     pickerFrame.size.height = ycoord + 2.f;
-    [self setFrame:pickerFrame];
-    [self setBackgroundColor:[UIColor blackColor]];
+    self.frame = pickerFrame;
+    self.backgroundColor = [UIColor blackColor];
 }
 
 #pragma mark - Column <-> Item conversions
@@ -166,22 +162,23 @@
 
 - (NSInteger)numberOfComponents
 {
-    if (_numberOfComponents) {
-        return _numberOfComponents;
+    if (self.numberOfComponents) {
+        return self.numberOfComponents;
     }
     
-    if (_dataSource && [_dataSource respondsToSelector:@selector(numberOfComponentsInPickerView:)]) {
-        _numberOfComponents = [_dataSource numberOfComponentsInPickerView:self];
+    if (self.dataSource && [self.dataSource respondsToSelector:@selector(numberOfComponentsInPickerView:)]) {
+        self.numberOfComponents = [self.dataSource numberOfComponentsInPickerView:self];
     } else {
         NSLog(@"Error: No dataSource set for ABHorizontalPickerView: %p", self);
     }
-    return _numberOfComponents;
+    return self.numberOfComponents;
 }
 
+// default value for showSelectionIndicator is NO
 - (BOOL)showsSelectionIndicator
 {
-    if (_showsSelectionIndicator) {
-        return _showsSelectionIndicator;
+    if (self.showsSelectionIndicator) {
+        return self.showsSelectionIndicator;
     } else {
         return NO;
     }
@@ -192,8 +189,8 @@
 - (NSInteger)numberOfColumnsInComponent:(NSInteger)component
 {
     NSInteger numberOfColumns = 0;
-    if (_dataSource && [_dataSource respondsToSelector:@selector(pickerView:numberOfColumnsInComponent:)]) {
-        numberOfColumns = [_dataSource pickerView:self numberOfColumnsInComponent:component];
+    if (self.dataSource && [self.dataSource respondsToSelector:@selector(pickerView:numberOfColumnsInComponent:)]) {
+        numberOfColumns = [self.dataSource pickerView:self numberOfColumnsInComponent:component];
     }
     return numberOfColumns;
 }
@@ -202,13 +199,13 @@
 {
     CGFloat height = 0.f;
     CGFloat width = 0.f;
-    if (_delegate) {
-        if ([_delegate respondsToSelector:@selector(pickerView:heightForComponent:)]) {
-            height = [_delegate pickerView:self heightForComponent:component];
+    if (self.delegate) {
+        if ([self.delegate respondsToSelector:@selector(pickerView:heightForComponent:)]) {
+            height = [self.delegate pickerView:self heightForComponent:component];
         }
         
-        if ([_delegate respondsToSelector:@selector(pickerView:columnWidthForComponent:)]) {
-            width = [_delegate pickerView:self columnWidthForComponent:component];
+        if ([self.delegate respondsToSelector:@selector(pickerView:columnWidthForComponent:)]) {
+            width = [self.delegate pickerView:self columnWidthForComponent:component];
         }
     }
     return CGSizeMake(width, height);
@@ -241,8 +238,8 @@
 {
     NSIndexPath *indexPath = [NSIndexPath indexPathForItem:[self itemForColumn:column forComponent:component] inSection:0];
     [(UICollectionView *)_components[component] scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:animated];
-    if (_delegate && [_delegate respondsToSelector:@selector(pickerView:didSelectColumn:inComponent:)]) {
-        [_delegate pickerView:self didSelectColumn:column inComponent:component];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(pickerView:didSelectColumn:inComponent:)]) {
+        [self.delegate pickerView:self didSelectColumn:column inComponent:component];
     }
 }
 
@@ -252,9 +249,9 @@
 {
     NSIndexPath *indexPath = [NSIndexPath indexPathForItem:[self itemForColumn:column forComponent:component] inSection:0];
     UICollectionViewCell *cell = [(UICollectionView *)_components[component] cellForItemAtIndexPath:indexPath];
-    UIView *view = [cell contentView];
-    if (!view && _delegate && [_delegate respondsToSelector:@selector(pickerView:viewForColumn:forComponent:reusingView:)]) {
-        view = [_delegate pickerView:self viewForColumn:column forComponent:component reusingView:view];
+    UIView *view = cell.contentView;
+    if (!view && self.delegate && [self.delegate respondsToSelector:@selector(pickerView:viewForColumn:forComponent:reusingView:)]) {
+        view = [self.delegate pickerView:self viewForColumn:column forComponent:component reusingView:view];
     }
     return view;
 }
@@ -271,8 +268,8 @@
     NSInteger numberOfItems = 0;
     if (section == 0) {
         NSInteger component = [_components indexOfObject:collectionView];
-        if (_dataSource && [_dataSource respondsToSelector:@selector(pickerView:numberOfColumnsInComponent:)]) {
-            numberOfItems = [_dataSource pickerView:self numberOfColumnsInComponent:component] + 2*[(NSNumber *)_numberOfBufferCellsForComponent[component] integerValue];
+        if (self.dataSource && [self.dataSource respondsToSelector:@selector(pickerView:numberOfColumnsInComponent:)]) {
+            numberOfItems = [self.dataSource pickerView:self numberOfColumnsInComponent:component] + 2*[(NSNumber *)_numberOfBufferCellsForComponent[component] integerValue];
         }
     }
     return numberOfItems;
@@ -284,39 +281,39 @@
     NSInteger component = [_components indexOfObject:collectionView];
     UICollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:CellIdentifier forIndexPath:indexPath];
     NSInteger bufferCellsForComponent = [(NSNumber *)_numberOfBufferCellsForComponent[component] integerValue];
-    NSInteger numberOfItems = [self collectionView:collectionView numberOfItemsInSection:[indexPath section]];
-    if ([indexPath row] >= bufferCellsForComponent && [indexPath row] < numberOfItems - bufferCellsForComponent) {
-        if (_delegate) {
-            if ([_delegate respondsToSelector:@selector(pickerView:viewForColumn:forComponent:reusingView:)]) {
-                for (UIView *subview in [[cell contentView] subviews]) {
+    NSInteger numberOfItems = [self collectionView:collectionView numberOfItemsInSection:indexPath.section];
+    if (indexPath.row >= bufferCellsForComponent && indexPath.row < numberOfItems - bufferCellsForComponent) {
+        if (self.delegate) {
+            if ([self.delegate respondsToSelector:@selector(pickerView:viewForColumn:forComponent:reusingView:)]) {
+                for (UIView *subview in cell.contentView.subviews) {
                     [subview removeFromSuperview];
                 }
-                [[cell contentView] addSubview:[_delegate pickerView:self
-                                                       viewForColumn:[indexPath row] - bufferCellsForComponent
+                [cell.contentView addSubview:[self.delegate pickerView:self
+                                                       viewForColumn:indexPath.row - bufferCellsForComponent
                                                         forComponent:component
-                                                         reusingView:[cell contentView]]];
+                                                         reusingView:cell.contentView]];
             } else {
-                for (UIView *subview in [[cell contentView] subviews]) {
+                for (UIView *subview in cell.contentView.subviews) {
                     [subview removeFromSuperview];
                 }
-                UILabel *titleLabel = [[UILabel alloc] initWithFrame:[[cell contentView] bounds]];
-                [titleLabel setTextAlignment:NSTextAlignmentCenter];
-                NSInteger column = [indexPath row] - bufferCellsForComponent;
-                if ([_delegate respondsToSelector:@selector(pickerView:attributedTitleForColumn:forComponent:)]) {
-                    [titleLabel setAttributedText:[_delegate pickerView:self attributedTitleForColumn:column forComponent:component]];
-                } else if ([_delegate respondsToSelector:@selector(pickerView:titleForColumn:forComponent:)]) {
-                    [titleLabel setText:[_delegate pickerView:self titleForColumn:column forComponent:component]];
+                UILabel *titleLabel = [[UILabel alloc] initWithFrame:cell.contentView.bounds];
+                titleLabel.textAlignment = NSTextAlignmentCenter;
+                NSInteger column = indexPath.row - bufferCellsForComponent;
+                if ([self.delegate respondsToSelector:@selector(pickerView:attributedTitleForColumn:forComponent:)]) {
+                    [titleLabel setAttributedText:[self.delegate pickerView:self attributedTitleForColumn:column forComponent:component]];
+                } else if ([self.delegate respondsToSelector:@selector(pickerView:titleForColumn:forComponent:)]) {
+                    [titleLabel setText:[self.delegate pickerView:self titleForColumn:column forComponent:component]];
                 } else {
                     NSLog(@"Error: Delegate must implement either pickerView:viewForColumn:forComponent:reusingView: or pickerView:titleForColumn:forComponent:");
                 }
-                [[cell contentView] addSubview:titleLabel];
+                [cell.contentView addSubview:titleLabel];
             }
         }
     } else {
-        for (UIView *subView in [[cell contentView] subviews]) {
+        for (UIView *subView in cell.contentView.subviews) {
             [subView removeFromSuperview];
         }
-        [[cell contentView] setBackgroundColor:[UIColor whiteColor]];
+        cell.contentView.backgroundColor = [UIColor whiteColor];
     }
     return cell;
 }
@@ -341,8 +338,8 @@
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView
 {
     NSInteger component = [_components indexOfObject:scrollView];
-    NSInteger column = [self columnForItem:[[(UICollectionView *)scrollView indexPathForItemInCenter] row] forComponent:component];
-    [_delegate pickerView:self didSelectColumn:column inComponent:component];
+    NSInteger column = [self columnForItem:[(UICollectionView *)scrollView indexPathForItemInCenter].row forComponent:component];
+    [self.delegate pickerView:self didSelectColumn:column inComponent:component];
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView
